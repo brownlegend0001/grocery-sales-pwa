@@ -35,7 +35,7 @@ var GOOGLE_CLIENT_ID = '137443458233-iskijv5vs8uvc3hp2pilo814l8ias8hk.apps.googl
 // Every Google account allowed to use the app. Add or remove emails here.
 var ALLOWED_EMAILS = [
   'brownlegend0001@gmail.com',
-  'SECOND_EMAIL_HERE@gmail.com'   // ← replace with the 2nd account (or delete this line)
+  'gurdevbhullar46@gmail.com'
 ];
 
 // How long a device stays signed in after one Google login.
