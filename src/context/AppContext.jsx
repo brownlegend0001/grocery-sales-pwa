@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import { MONTHS, SYNC, INPUT_FIELDS } from '../lib/constants.js'
 import { daysInMonth, weekdayFor, todayParts } from '../lib/format.js'
-import { deriveDay } from '../lib/calc.js'
+import { deriveDay, summariseMonth } from '../lib/calc.js'
 import { YEAR, IS_CONFIGURED } from '../config.js'
-import { fetchMonth, fetchSummary } from '../api/sheets.js'
+import { fetchMonth } from '../api/sheets.js'
 import { cacheGet, cacheSet } from '../db/idb.js'
 import { enqueue, onSyncChange, startSyncEngine, flush } from '../sync/syncEngine.js'
 
@@ -76,15 +76,39 @@ export function AppProvider({ children }) {
     }
   }, [])
 
-  const loadSummary = useCallback(async ({ force = false } = {}) => {
-    const cached = await cacheGet('summary')
-    if (cached) setSummary(cached)
-    if (!IS_CONFIGURED || !navigator.onLine) return
-    try {
-      const s = await fetchSummary()
-      await cacheSet('summary', s)
-      setSummary(s)
-    } catch { /* keep cached */ }
+  // Build the whole-year rollup CLIENT-SIDE from the same per-month data the
+  // dashboard uses. Cache-first for instant paint, then refresh every month in
+  // parallel when online. This avoids the heavy/fragile server getSummary call.
+  const buildYear = useCallback(async ({ force = false } = {}) => {
+    const cachedSummary = await cacheGet('summary')
+    if (cachedSummary && !force) setSummary(cachedSummary)
+
+    const rows = []
+    for (let mi = 0; mi < MONTHS.length; mi++) {
+      rows[mi] = (await cacheGet(`month:${MONTHS[mi]}`)) || []
+    }
+
+    if (IS_CONFIGURED && navigator.onLine) {
+      const results = await Promise.allSettled(MONTHS.map((m) => fetchMonth(m)))
+      for (let mi = 0; mi < results.length; mi++) {
+        if (results[mi].status === 'fulfilled') {
+          rows[mi] = results[mi].value
+          await cacheSet(`month:${MONTHS[mi]}`, results[mi].value)
+        }
+      }
+    }
+
+    const months = MONTHS.map((name, mi) => ({ month: name, ...summariseMonth(rows[mi]) }))
+    const yearTotal = months.reduce((a, m) => {
+      a.totalSales += m.totalSales; a.cash += m.cash; a.online += m.online; a.card += m.card
+      a.salon += m.salon; a.expenses += m.expenses; a.toSuppliers += m.toSuppliers; a.netProfit += m.netProfit
+      return a
+    }, { totalSales: 0, cash: 0, online: 0, card: 0, salon: 0, expenses: 0, toSuppliers: 0, netProfit: 0 })
+
+    const summaryObj = { year: YEAR, yearTotal, months }
+    await cacheSet('summary', summaryObj)
+    setSummary(summaryObj)
+    return summaryObj
   }, [])
 
   // React to month changes.
@@ -93,17 +117,15 @@ export function AppProvider({ children }) {
     loadMonth(monthIndex)
   }, [monthIndex, loadMonth])
 
-  useEffect(() => { loadSummary() }, [loadSummary])
-
-  // After a successful flush returns us to SYNCED, refresh current month+summary.
+  // After a successful flush returns us to SYNCED, refresh the current month.
+  // (The Year tab rebuilds itself whenever it's opened.)
   const prevStatus = useRef(sync.status)
   useEffect(() => {
     if (prevStatus.current === SYNC.SYNCING && sync.status === SYNC.SYNCED) {
       loadMonth(monthIndex, { force: true })
-      loadSummary({ force: true })
     }
     prevStatus.current = sync.status
-  }, [sync.status, monthIndex, loadMonth, loadSummary])
+  }, [sync.status, monthIndex, loadMonth])
 
   // Optimistically update a day locally, then queue the write.
   const updateDay = useCallback((day, values) => {
@@ -167,7 +189,8 @@ export function AppProvider({ children }) {
     updateDay,
     removeDay,
     applyImport,
-    refresh: () => { loadMonth(monthIndex, { force: true }); loadSummary({ force: true }); flush() }
+    buildYear,
+    refresh: () => { loadMonth(monthIndex, { force: true }); buildYear({ force: true }); flush() }
   }
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

@@ -1,16 +1,26 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext.jsx'
 import { MONTHS } from '../lib/constants.js'
-import { rupee, rupeeCompact, pct } from '../lib/format.js'
+import { rupee, rupeeCompact } from '../lib/format.js'
 import KpiCard from '../components/KpiCard.jsx'
 import BarChart from '../components/BarChart.jsx'
 import DonutChart from '../components/DonutChart.jsx'
 
 // Whole-year performance — the annual rollup across all 12 month tabs.
 export default function Summary() {
-  const { summary, YEAR, setMonthIndex, isConfigured } = useApp()
+  const { summary, YEAR, setMonthIndex, isConfigured, buildYear } = useApp()
   const navigate = useNavigate()
+  const [loading, setLoading] = useState(!summary)
+
+  // Build/refresh the year rollup whenever this tab is opened.
+  useEffect(() => {
+    let alive = true
+    setLoading(!summary)
+    buildYear().finally(() => { if (alive) setLoading(false) })
+    return () => { alive = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const months = summary?.months || []
   const yt = summary?.yearTotal || null
@@ -35,11 +45,16 @@ export default function Summary() {
   if (!summary) {
     return (
       <div className="space-y-4">
-        <Header year={YEAR} />
-        <div className="card p-6 text-center text-sm text-slate-400">
-          {isConfigured
-            ? 'Loading year summary… (pull data by opening a month, or check your connection)'
-            : 'Connect to Google Sheets to see the annual summary.'}
+        <Header year={YEAR} loading={loading} onRefresh={() => buildYear({ force: true })} />
+        <div className="card flex flex-col items-center gap-3 p-8 text-center text-sm text-slate-400">
+          {isConfigured ? (
+            <>
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-accent" />
+              Crunching all 12 months…
+            </>
+          ) : (
+            'Connect to Google Sheets to see the annual summary.'
+          )}
         </div>
       </div>
     )
@@ -47,7 +62,7 @@ export default function Summary() {
 
   return (
     <div className="space-y-4">
-      <Header year={YEAR} />
+      <Header year={YEAR} loading={loading} onRefresh={() => buildYear({ force: true })} />
 
       <div className="grid grid-cols-2 gap-3">
         <KpiCard label="Year Sales" value={rupeeCompact(yt.totalSales)} sub="all 12 months" accent="text-accent" icon="📈" />
@@ -115,11 +130,16 @@ export default function Summary() {
   )
 }
 
-function Header({ year }) {
+function Header({ year, loading, onRefresh }) {
   return (
-    <div className="flex items-baseline justify-between px-1">
+    <div className="flex items-center justify-between px-1">
       <h1 className="text-lg font-bold text-white">{year} Performance</h1>
-      <span className="text-xs text-slate-400">Annual summary</span>
+      <button onClick={onRefresh} className="tap flex items-center gap-1.5 rounded-full border border-white/10 bg-card px-3 py-1 text-xs font-medium text-slate-300">
+        <svg viewBox="0 0 24 24" className={`h-3.5 w-3.5 fill-none stroke-accent ${loading ? 'animate-spin' : ''}`} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6" />
+        </svg>
+        {loading ? 'Syncing' : 'Refresh'}
+      </button>
     </div>
   )
 }
