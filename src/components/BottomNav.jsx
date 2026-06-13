@@ -12,11 +12,18 @@ const ICONS = {
   ),
   data: (
     <path d="M8 17l-4-4 4-4M16 7l4 4-4 4M4 13h10M10 11h10" strokeWidth="2.2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+  ),
+  year: (
+    <g strokeWidth="2.2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 20h16" />
+      <path d="M7 20v-6M12 20V7M17 20v-9" />
+    </g>
   )
 }
 
 const items = [
-  { to: '/', label: 'Dashboard', icon: 'dashboard', end: true },
+  { to: '/', label: 'Month', icon: 'dashboard', end: true },
+  { to: '/year', label: 'Year', icon: 'year' },
   { to: '/entry', label: 'Entry', icon: 'entry' },
   { to: '/log', label: 'Log', icon: 'log' },
   { to: '/data', label: 'Data', icon: 'data' }
