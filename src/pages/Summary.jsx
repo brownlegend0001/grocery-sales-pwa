@@ -64,6 +64,13 @@ export default function Summary() {
     <div className="space-y-4">
       <Header year={YEAR} loading={loading} onRefresh={() => buildYear({ force: true })} />
 
+      {summary.error && (
+        <div className="card border-warn/40 bg-warn/5 p-3 text-xs text-warn">
+          Some months couldn’t load ({summary.okCount}/12 read). Last error:
+          <span className="block font-mono text-[11px] text-warn/90">{summary.error}</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-3">
         <KpiCard label="Year Sales" value={rupeeCompact(yt.totalSales)} sub="all 12 months" accent="text-accent" icon="📈" />
         <KpiCard label="Net Profit" value={rupeeCompact(yt.netProfit)} sub={`Salon ${rupeeCompact(yt.salon)}`} accent={yt.netProfit >= 0 ? 'text-white' : 'text-danger'} icon="💰" />
@@ -126,6 +133,10 @@ export default function Summary() {
           </div>
         )}
       </div>
+
+      <p className="pt-1 text-center text-[10px] text-slate-600">
+        year-rollup build YR-3 · {summary.okCount ?? 0}/12 months read
+      </p>
     </div>
   )
 }

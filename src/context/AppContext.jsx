@@ -88,12 +88,17 @@ export function AppProvider({ children }) {
       rows[mi] = (await cacheGet(`month:${MONTHS[mi]}`)) || []
     }
 
+    let firstError = null
+    let okCount = 0
     if (IS_CONFIGURED && navigator.onLine) {
       const results = await Promise.allSettled(MONTHS.map((m) => fetchMonth(m)))
       for (let mi = 0; mi < results.length; mi++) {
         if (results[mi].status === 'fulfilled') {
+          okCount++
           rows[mi] = results[mi].value
           await cacheSet(`month:${MONTHS[mi]}`, results[mi].value)
+        } else if (!firstError) {
+          firstError = results[mi].reason?.message || String(results[mi].reason)
         }
       }
     }
@@ -105,7 +110,7 @@ export function AppProvider({ children }) {
       return a
     }, { totalSales: 0, cash: 0, online: 0, card: 0, salon: 0, expenses: 0, toSuppliers: 0, netProfit: 0 })
 
-    const summaryObj = { year: YEAR, yearTotal, months }
+    const summaryObj = { year: YEAR, yearTotal, months, error: firstError, okCount, builtAt: Date.now() }
     await cacheSet('summary', summaryObj)
     setSummary(summaryObj)
     return summaryObj
