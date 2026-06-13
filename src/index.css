@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: theme('fontFamily.sans');
+  -webkit-font-smoothing: antialiased;
+  /* Lock the page: only inner panels scroll, the background never bounces */
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Prevent iOS from auto-zooming when an input is focused (needs >=16px) */
+input, select, textarea, button {
+  font-size: 16px;
+}
+
+@layer components {
+  /* Haptic-friendly tap target: min 44px, presses down on touch */
+  .tap {
+    @apply select-none active:scale-[0.97] transition-transform duration-75;
+    min-height: 44px;
+  }
+  .card {
+    @apply bg-card rounded-2xl border border-line/60 shadow-card;
+  }
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium;
+  }
+}
+
+/* Hide scrollbars on the horizontal tab strip but keep it scrollable */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Numbers tabular so columns line up */
+.tnum { font-variant-numeric: tabular-nums; }

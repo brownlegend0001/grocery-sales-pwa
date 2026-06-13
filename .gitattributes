@@ -1,0 +1,7 @@
+# Treat Excel workbooks as binary so git doesn't try to diff/merge them
+*.xlsx binary
+*.xls  binary
+*.xlsm binary
+
+# Normalize line endings for text files
+* text=auto

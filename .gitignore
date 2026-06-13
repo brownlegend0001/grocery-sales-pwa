@@ -1,0 +1,42 @@
+# Source spreadsheets — CONFIDENTIAL sales data, never publish to the repo
+*.xlsx
+*.xls
+*.xlsm
+
+# Excel / Office temp lock files
+~$*.xlsx
+~$*.xls
+~$*.docx
+*.tmp
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+build/
+.next/
+out/
+
+# Logs
+*.log
+
+# Editor
+.vscode/
+.idea/
+*.swp
