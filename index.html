@@ -23,7 +23,15 @@
     <title>Grocery Sales</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Boot fallback: React clears this on mount. If it stays on screen,
+           the app didn't mount (stale cache or a runtime error). -->
+      <div id="boot-fallback" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#94a3b8;font-family:-apple-system,system-ui,sans-serif;text-align:center;padding:24px">
+        <div style="width:56px;height:56px;border-radius:18px;display:grid;place-items:center;font-size:28px;background:linear-gradient(135deg,#34d399,#10b981)">🛒</div>
+        <div style="font-size:14px">Loading…</div>
+        <div style="font-size:11px;color:#475569">build YR-4 · if this stays, tap ••• ▸ Reload</div>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
 
     <!-- Self-heal: if a stale service worker leaves the app unmounted (blank
@@ -32,8 +40,8 @@
       (function () {
         var KEY = '__selfheal__';
         setTimeout(function () {
-          var root = document.getElementById('root');
-          if (!root || root.childElementCount > 0) return;
+          // The boot fallback is removed by React on a successful mount.
+          if (!document.getElementById('boot-fallback')) return;
           if (sessionStorage.getItem(KEY)) return;
           sessionStorage.setItem(KEY, '1');
           var reload = function () { location.reload(); };

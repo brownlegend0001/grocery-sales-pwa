@@ -5,6 +5,7 @@ import { registerSW } from 'virtual:pwa-register'
 import App from './App.jsx'
 import { AppProvider } from './context/AppContext.jsx'
 import SignInGate from './components/SignInGate.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
 import './index.css'
 
 // HashRouter is used so deep links work on GitHub Pages without server rewrites.
@@ -12,13 +13,15 @@ import './index.css'
 // authorised account is signed in.
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <HashRouter>
-      <SignInGate>
-        <AppProvider>
-          <App />
-        </AppProvider>
-      </SignInGate>
-    </HashRouter>
+    <ErrorBoundary>
+      <HashRouter>
+        <SignInGate>
+          <AppProvider>
+            <App />
+          </AppProvider>
+        </SignInGate>
+      </HashRouter>
+    </ErrorBoundary>
   </React.StrictMode>
 )
 
