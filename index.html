@@ -25,5 +25,34 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- Self-heal: if a stale service worker leaves the app unmounted (blank
+         screen after a deploy), clear the SW + caches once and reload. -->
+    <script>
+      (function () {
+        var KEY = '__selfheal__';
+        setTimeout(function () {
+          var root = document.getElementById('root');
+          if (!root || root.childElementCount > 0) return;
+          if (sessionStorage.getItem(KEY)) return;
+          sessionStorage.setItem(KEY, '1');
+          var reload = function () { location.reload(); };
+          try {
+            var jobs = [];
+            if ('serviceWorker' in navigator) {
+              jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) {
+                return Promise.all(rs.map(function (r) { return r.unregister(); }));
+              }));
+            }
+            if (window.caches) {
+              jobs.push(caches.keys().then(function (ks) {
+                return Promise.all(ks.map(function (k) { return caches.delete(k); }));
+              }));
+            }
+            Promise.all(jobs).then(reload, reload);
+          } catch (e) { reload(); }
+        }, 5000);
+      })();
+    </script>
   </body>
 </html>
