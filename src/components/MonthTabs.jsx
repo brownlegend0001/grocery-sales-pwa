@@ -23,7 +23,7 @@ export default function MonthTabs() {
             data-active={active}
             onClick={() => setMonthIndex(i)}
             className={`tap shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold ${
-              active ? 'bg-accent text-ink' : 'bg-card text-slate-300 border border-line/60'
+              active ? 'bg-brand text-ink shadow-glow-sm' : 'bg-card text-slate-300 border border-white/10'
             }`}
           >
             {m}

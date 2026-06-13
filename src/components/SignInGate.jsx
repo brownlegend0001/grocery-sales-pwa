@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react'
 import { useAuth } from '../hooks/useAuth.js'
-import { renderButton, signOut, ALLOWED_EMAIL } from '../auth/googleAuth.js'
+import { renderButton, signOut } from '../auth/googleAuth.js'
 
-// Wraps the whole app. Renders children only once signed in as the authorised
-// account. When auth is disabled (no client id configured) it's a pass-through.
+// Wraps the whole app. Renders children only once signed in. A stored device
+// session keeps you signed in across launches, so this screen normally appears
+// just once. When auth is disabled (no client id) it's a pass-through.
 export default function SignInGate({ children }) {
   const auth = useAuth()
   const btnRef = useRef(null)
@@ -13,50 +14,57 @@ export default function SignInGate({ children }) {
   }, [auth.ready, auth.signedIn, auth.wrongAccount])
 
   if (!auth.enabled) return children
-  if (!auth.ready) return <Splash label="Starting…" />
+  if (!auth.ready) return <Splash />
   if (auth.signedIn) return children
 
   return (
-    <div
-      className="flex min-h-[100dvh] flex-col items-center justify-center bg-ink px-6 text-center"
-      style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
-    >
-      <div className="grid h-16 w-16 place-items-center rounded-2xl bg-accent/15 text-3xl">🛒</div>
-      <h1 className="mt-5 text-xl font-bold text-white">Grocery Sales</h1>
-      <p className="mt-1 text-sm text-slate-400">Confidential — authorised account only</p>
+    <div className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-ink px-6 text-center"
+      style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      {/* ambient glow */}
+      <div className="pointer-events-none absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-accent/20 blur-[90px]" />
+      <div className="pointer-events-none absolute bottom-0 right-0 h-64 w-64 rounded-full bg-accent2/10 blur-[90px]" />
 
-      {auth.wrongAccount && (
-        <div className="mt-5 w-full max-w-xs rounded-xl border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
-          That Google account isn’t allowed. This app is locked to
-          <span className="block font-semibold break-all">{ALLOWED_EMAIL}</span>
-          <button onClick={signOut} className="tap mt-2 text-xs font-medium text-slate-300 underline">
-            Use a different account
-          </button>
+      <div className="relative z-10 flex flex-col items-center">
+        <div className="grid h-20 w-20 place-items-center rounded-[28px] bg-gradient-to-br from-accent to-emerald-600 text-4xl shadow-glow">
+          🛒
         </div>
-      )}
+        <h1 className="mt-6 text-2xl font-extrabold tracking-tight text-white">Grocery Sales</h1>
+        <p className="mt-1.5 text-sm text-slate-400">Confidential · authorised accounts only</p>
 
-      <div className="mt-7 flex justify-center" ref={btnRef} />
+        {auth.wrongAccount && (
+          <div className="mt-6 w-full max-w-xs rounded-2xl border border-danger/40 bg-danger/10 p-4 text-sm text-danger">
+            That Google account isn’t on the allow-list.
+            <button onClick={signOut} className="tap mt-2 block w-full text-xs font-semibold text-slate-200 underline">
+              Try a different account
+            </button>
+          </div>
+        )}
 
-      {!navigator.onLine && (
-        <p className="mt-6 max-w-xs text-xs text-warn">
-          You’re offline. Connect to the internet once to sign in — after that the
-          app works offline.
+        <div className="mt-8 flex justify-center" ref={btnRef} />
+
+        {!navigator.onLine && (
+          <p className="mt-6 max-w-xs text-xs text-warn">
+            You’re offline — connect once to sign in. After that the app opens
+            without signing in again.
+          </p>
+        )}
+
+        <p className="mt-10 max-w-[15rem] text-[11px] leading-relaxed text-slate-500">
+          Verified on Google’s servers. Stay signed in for 30 days on this device.
         </p>
-      )}
-
-      <p className="mt-8 max-w-xs text-[11px] leading-relaxed text-slate-500">
-        Your sign-in is verified on Google’s servers before any sheet data is
-        read or written.
-      </p>
+      </div>
     </div>
   )
 }
 
-function Splash({ label }) {
+function Splash() {
   return (
-    <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-3 bg-ink">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-line border-t-accent" />
-      <span className="text-sm text-slate-400">{label}</span>
+    <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 bg-ink">
+      <div className="grid h-16 w-16 animate-pulse place-items-center rounded-3xl bg-gradient-to-br from-accent to-emerald-600 text-3xl shadow-glow">🛒</div>
+      <div className="h-1 w-24 overflow-hidden rounded-full bg-card">
+        <div className="h-full w-1/2 animate-[slide_1.1s_ease-in-out_infinite] rounded-full bg-accent" />
+      </div>
+      <style>{`@keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}`}</style>
     </div>
   )
 }

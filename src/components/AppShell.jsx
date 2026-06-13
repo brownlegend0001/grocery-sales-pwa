@@ -15,15 +15,18 @@ export default function AppShell() {
   return (
     <div className="flex h-[100dvh] flex-col bg-ink">
       <header
-        className="shrink-0 border-b border-line/60 bg-panel/95 px-4 backdrop-blur"
+        className="shrink-0 border-b border-white/10 bg-panel/70 px-4 backdrop-blur-xl"
         style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.5rem)' }}
       >
-        <div className="mx-auto flex max-w-md items-center justify-between pb-2">
-          <div>
-            <h1 className="text-lg font-bold leading-tight text-white">
-              {MONTH_FULL[month]} <span className="text-slate-400">{YEAR}</span>
-            </h1>
-            <p className="text-[11px] text-slate-400">Daily Sales Tracker</p>
+        <div className="mx-auto flex max-w-md items-center justify-between pb-2.5">
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand text-lg shadow-glow-sm">🛒</span>
+            <div>
+              <h1 className="text-[17px] font-extrabold leading-tight tracking-tight text-grad">
+                {MONTH_FULL[month]} {YEAR}
+              </h1>
+              <p className="text-[11px] text-slate-400">Daily Sales Tracker</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <SyncPill />

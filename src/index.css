@@ -12,11 +12,15 @@ html, body, #root {
 
 body {
   margin: 0;
-  background: #0f172a;
-  color: #e2e8f0;
+  color: #e6edf7;
   font-family: theme('fontFamily.sans');
   -webkit-font-smoothing: antialiased;
-  /* Lock the page: only inner panels scroll, the background never bounces */
+  /* Layered radial glows over a deep navy base for a premium feel */
+  background:
+    radial-gradient(1100px 520px at 12% -8%, rgba(52,211,153,0.10), transparent 60%),
+    radial-gradient(900px 480px at 100% 0%, rgba(56,189,248,0.08), transparent 55%),
+    #0b1120;
+  background-attachment: fixed;
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
@@ -28,22 +32,37 @@ input, select, textarea, button {
 }
 
 @layer components {
-  /* Haptic-friendly tap target: min 44px, presses down on touch */
+  /* Haptic-friendly tap target */
   .tap {
-    @apply select-none active:scale-[0.97] transition-transform duration-75;
+    @apply select-none active:scale-[0.97] transition-transform duration-100;
     min-height: 44px;
   }
+  /* Glassy card */
   .card {
-    @apply bg-card rounded-2xl border border-line/60 shadow-card;
+    @apply rounded-3xl border border-white/10 shadow-card;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0)) ,
+      rgba(23,32,51,0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
   .pill {
-    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium;
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold;
+  }
+  .btn-brand {
+    @apply tap rounded-2xl bg-brand font-bold text-ink shadow-glow-sm;
   }
 }
 
-/* Hide scrollbars on the horizontal tab strip but keep it scrollable */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Numbers tabular so columns line up */
 .tnum { font-variant-numeric: tabular-nums; }
+
+/* Gradient text helper */
+.text-grad {
+  background: linear-gradient(120deg, #fff 0%, #b6f7da 60%, #67e8f9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

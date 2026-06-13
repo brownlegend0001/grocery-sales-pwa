@@ -66,8 +66,8 @@ export default function Entry() {
               key={d}
               onClick={() => setDay(d)}
               data-active={d === day}
-              className={`tap grid h-9 w-9 shrink-0 place-items-center rounded-lg text-sm font-semibold ${
-                d === day ? 'bg-accent text-ink' : 'bg-card text-slate-300 border border-line/60'
+              className={`tap grid h-9 w-9 shrink-0 place-items-center rounded-xl text-sm font-semibold ${
+                d === day ? 'bg-brand text-ink shadow-glow-sm' : 'bg-card text-slate-300 border border-white/10'
               }`}
             >
               {d}
@@ -114,8 +114,8 @@ export default function Entry() {
       <div className="sticky bottom-0 -mx-4 px-4 pt-1">
         <button
           onClick={save}
-          className={`tap w-full rounded-2xl py-4 text-base font-bold shadow-card ${
-            saved ? 'bg-accent/20 text-accent' : 'bg-accent text-ink'
+          className={`tap w-full rounded-2xl py-4 text-base font-bold ${
+            saved ? 'bg-accent/20 text-accent' : 'btn-brand'
           }`}
         >
           {saved ? '✓ Saved' : `Save ${MONTHS[monthIndex]} ${day}`}

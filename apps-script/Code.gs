@@ -29,12 +29,17 @@
  *   G SalonCash  H SalonOnline  I SalonTotal  J Expenses  K ToSuppliers  L NetProfit
  */
 
-// ⚠️ CHANGE THESE. Both must match the app's .env values.
-//   GOOGLE_CLIENT_ID – the OAuth 2.0 "Web application" client id from Google
-//                      Cloud Console (ends in .apps.googleusercontent.com).
-//   ALLOWED_EMAIL    – the single Google account permitted to use the app.
-var GOOGLE_CLIENT_ID = 'CHANGE_ME.apps.googleusercontent.com';
-var ALLOWED_EMAIL = 'brownlegend0001@gmail.com';
+// OAuth 2.0 "Web application" client id (same as the app's VITE_GOOGLE_CLIENT_ID).
+var GOOGLE_CLIENT_ID = '137443458233-iskijv5vs8uvc3hp2pilo814l8ias8hk.apps.googleusercontent.com';
+
+// Every Google account allowed to use the app. Add or remove emails here.
+var ALLOWED_EMAILS = [
+  'brownlegend0001@gmail.com',
+  'SECOND_EMAIL_HERE@gmail.com'   // ← replace with the 2nd account (or delete this line)
+];
+
+// How long a device stays signed in after one Google login.
+var SESSION_DAYS = 30;
 
 var HEADER_ROW = 7;
 var FIRST_DATA_ROW = 8;
@@ -57,7 +62,8 @@ function doPost(e) {
 function handle(req) {
   try {
     if (req.action === 'ping') return ok({ pong: true });
-    assertAuthorized(req); // throws if the Google ID token isn't ALLOWED_EMAIL
+    if (req.action === 'login') return ok(login(req.idToken)); // mint device session
+    assertAuth(req); // accepts a device session OR a Google ID token
 
     switch (req.action) {
       case 'getMonth':   return ok(getMonth(req.month));
@@ -72,35 +78,76 @@ function handle(req) {
 }
 
 // ---- Auth -----------------------------------------------------------------
+//
+// Two credential types:
+//   • Google ID token  – short-lived, from the browser sign-in. Exchanged once
+//     at the `login` action for a session.
+//   • Device session   – a 30-day HMAC token this script signs, so the app
+//     stays signed in without hitting Google on every launch.
+// `assertAuth` accepts either, so old and new app builds both keep working.
 
-// Verify the Google ID token sent by the app and require it to belong to
-// ALLOWED_EMAIL. Google's tokeninfo endpoint validates the JWT signature and
-// expiry for us, so we just check the claims it returns.
-function assertAuthorized(req) {
-  var idToken = req.idToken;
+function allowedLower() {
+  return ALLOWED_EMAILS.map(function (e) { return String(e).toLowerCase().trim(); });
+}
+
+// Verify a Google ID token and return its email if it's an allowed account.
+function verifyIdToken(idToken) {
   if (!idToken) throw new Error('Sign-in required');
-
   var resp = UrlFetchApp.fetch(
     'https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(idToken),
     { muteHttpExceptions: true }
   );
   if (resp.getResponseCode() !== 200) throw new Error('Invalid sign-in');
-
   var info = JSON.parse(resp.getContentText());
 
-  // The token must have been issued FOR our app...
   if (String(info.aud) !== String(GOOGLE_CLIENT_ID)) throw new Error('Wrong audience');
-  // ...issued by Google...
   if (info.iss !== 'accounts.google.com' && info.iss !== 'https://accounts.google.com') {
     throw new Error('Bad issuer');
   }
-  // ...for a verified address that is exactly the allowed account...
   if (String(info.email_verified) !== 'true') throw new Error('Email not verified');
-  if (String(info.email).toLowerCase() !== String(ALLOWED_EMAIL).toLowerCase()) {
-    throw new Error('Not authorized');
-  }
-  // ...and not expired.
   if (Number(info.exp) * 1000 < Date.now()) throw new Error('Sign-in expired');
+  var email = String(info.email).toLowerCase();
+  if (allowedLower().indexOf(email) < 0) throw new Error('Not authorized');
+  return info.email;
+}
+
+// Exchange a verified ID token for a long-lived device session.
+function login(idToken) {
+  return mintSession(verifyIdToken(idToken));
+}
+
+// A per-script secret, auto-generated and stored once. Delete the
+// SESSION_SECRET script property to log every device out.
+function sessionSecret() {
+  var props = PropertiesService.getScriptProperties();
+  var s = props.getProperty('SESSION_SECRET');
+  if (!s) { s = Utilities.getUuid() + Utilities.getUuid(); props.setProperty('SESSION_SECRET', s); }
+  return s;
+}
+
+function b64url(input) { return Utilities.base64EncodeWebSafe(input).replace(/=+$/, ''); }
+function hmac(body) { return b64url(Utilities.computeHmacSha256Signature(body, sessionSecret())); }
+
+function mintSession(email) {
+  var expSec = Math.floor(Date.now() / 1000) + SESSION_DAYS * 86400;
+  var body = b64url(JSON.stringify({ email: email, exp: expSec }));
+  return { session: body + '.' + hmac(body), email: email, exp: expSec };
+}
+
+// Accept either a device session or a raw Google ID token.
+function assertAuth(req) {
+  if (req.session) return assertSession(req.session);
+  if (req.idToken) { verifyIdToken(req.idToken); return; }
+  throw new Error('Sign-in required');
+}
+
+function assertSession(session) {
+  var parts = String(session).split('.');
+  if (parts.length !== 2) throw new Error('Bad session');
+  if (hmac(parts[0]) !== parts[1]) throw new Error('Invalid session');
+  var payload = JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(parts[0])).getDataAsString());
+  if (Number(payload.exp) * 1000 < Date.now()) throw new Error('Session expired');
+  if (allowedLower().indexOf(String(payload.email).toLowerCase()) < 0) throw new Error('Not authorized');
 }
 
 // ---- Spreadsheet helpers --------------------------------------------------

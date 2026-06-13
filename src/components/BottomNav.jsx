@@ -32,7 +32,7 @@ const items = [
 export default function BottomNav() {
   return (
     <nav
-      className="border-t border-line/60 bg-panel/95 backdrop-blur"
+      className="border-t border-white/10 bg-panel/80 backdrop-blur-xl"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="mx-auto flex max-w-md">
@@ -42,15 +42,22 @@ export default function BottomNav() {
             to={it.to}
             end={it.end}
             className={({ isActive }) =>
-              `tap flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium ${
-                isActive ? 'text-accent' : 'text-slate-400'
+              `tap relative flex flex-1 flex-col items-center gap-1 pb-2 pt-2.5 text-[10px] font-semibold ${
+                isActive ? 'text-accent' : 'text-slate-500'
               }`
             }
           >
-            <svg viewBox="0 0 24 24" className="h-6 w-6 fill-current">
-              {ICONS[it.icon]}
-            </svg>
-            {it.label}
+            {({ isActive }) => (
+              <>
+                <span className={`absolute top-0 h-[3px] w-8 rounded-full bg-accent transition-opacity ${isActive ? 'opacity-100 shadow-glow-sm' : 'opacity-0'}`} />
+                <span className={`grid h-7 w-7 place-items-center rounded-xl transition-colors ${isActive ? 'bg-accent/15' : ''}`}>
+                  <svg viewBox="0 0 24 24" className="h-[22px] w-[22px] fill-current">
+                    {ICONS[it.icon]}
+                  </svg>
+                </span>
+                {it.label}
+              </>
+            )}
           </NavLink>
         ))}
       </div>

@@ -1,5 +1,5 @@
 import { SHEETS_API, IS_AUTH_ENABLED } from '../config.js'
-import { getIdToken } from '../auth/googleAuth.js'
+import { getAuthParams } from '../auth/googleAuth.js'
 
 // All network access to the Google Sheet goes through the Apps Script Web App.
 // We POST with Content-Type: text/plain to stay a "simple request" and avoid a
@@ -11,13 +11,13 @@ class ApiError extends Error {}
 async function call(action, payload = {}) {
   if (!SHEETS_API) throw new ApiError('Sheets API URL not configured')
 
-  const idToken = await getIdToken()
-  if (IS_AUTH_ENABLED && !idToken) throw new ApiError('Sign-in required')
+  const auth = await getAuthParams()
+  if (IS_AUTH_ENABLED && !auth) throw new ApiError('Sign-in required')
 
   const res = await fetch(SHEETS_API, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action, idToken, ...payload })
+    body: JSON.stringify({ action, ...(auth || {}), ...payload })
   })
 
   if (!res.ok) throw new ApiError(`HTTP ${res.status}`)
